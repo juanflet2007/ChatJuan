@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatJuan</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>ChatJuan</h2>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+
+        </div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Escribe tu mensaje...">
+            <button id="send-button">Enviar</button>
+        </div>
+    </div>
+
+    <script>
+
+        function loadMessages() {
+            fetch('/get_messages')
+                .then(response => response.json())
+                .then(data => {
+                    const chatMessages = document.getElementById('chat-messages');
+                    chatMessages.innerHTML = '';
+                    data.messages.forEach(msg => {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = `message ${msg.sender}`;
+                        messageDiv.textContent = msg.text;
+                        chatMessages.appendChild(messageDiv);
+                    });
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                });
+        }
+
+        function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const message = userInput.value.trim();
+            
+            if (message) {
+                fetch('/send_message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `message=${encodeURIComponent(message)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        userInput.value = '';
+                        loadMessages();
+                    }
+                });
+            }
+        }
+
+        document.getElementById('send-button').addEventListener('click', sendMessage);
+        document.getElementById('user-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        loadMessages();
+        setInterval(loadMessages, 2000);
+    </script>
+</body>
+</html>
